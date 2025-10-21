@@ -1,0 +1,13 @@
+services:
+  nginx:
+    image: openresty/openresty:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx_proxy/nginx.conf:/usr/local/openresty/nginx/conf/nginx.conf
+      - ./nginx_proxy/ssl/server.key:/etc/nginx/ssl/private/server.key
+      - ./nginx_proxy/ssl/sirienergy_uab_cat.pem:/etc/nginx/ssl/private/sirienergy_uab_cat.pem
+    container_name: nginx_proxy
+
+
