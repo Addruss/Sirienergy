@@ -10,4 +10,10 @@ services:
       - ./nginx_proxy/ssl/sirienergy_uab_cat.pem:/etc/nginx/ssl/private/sirienergy_uab_cat.pem
     container_name: nginx_proxy
 
+  test_ms1:
+    build:
+      context: ./test_ms1
+    volumes:
+      - ./test_ms1/app.py:/app/app.py
+    container_name: test_ms1
 
