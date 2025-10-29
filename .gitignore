@@ -3,3 +3,8 @@
 
 # ignore ssl certificates
 ssl/
+
+# ignore virtual environments
+venv/
+.venv/
+.conda/
