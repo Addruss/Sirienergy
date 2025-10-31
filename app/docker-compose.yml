@@ -17,3 +17,23 @@ services:
       - ./test_ms1/app.py:/app/app.py
     container_name: test_ms1
 
+  user:
+    build: ./user_ms
+    env_file:
+      - ./user_ms/.env
+    volumes:
+      - ./user_ms/app.py:/app/app.py
+    depends_on:
+      - user_db
+    container_name: user
+
+  user_db:
+    image: postgres:15-alpine
+    env_file:
+      - ./user_ms/.env
+    volumes:
+      - userdb_data:/var/lib/postgresql/data
+    container_name: user_db
+
+volumes:
+  userdb_data:
