@@ -1,5 +1,6 @@
 # ignore all .env files
 *.env
+.env.*
 
 # ignore ssl certificates
 ssl/
@@ -8,3 +9,6 @@ ssl/
 venv/
 .venv/
 .conda/
+
+# ignore cookie files
+cookies.txt

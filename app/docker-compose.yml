@@ -21,7 +21,7 @@ services:
     build:
       context: ./test_ms2
     env_file:
-      - ./user_ms/.env
+      - ./common/env_files/.env.cookies
     volumes:
       - ./test_ms2/app.py:/app/app.py
     container_name: test_ms2
@@ -31,6 +31,7 @@ services:
       context: ./user_ms
     env_file:
       - ./user_ms/.env
+      - ./common/env_files/.env.cookies
     volumes:
       - ./user_ms/app.py:/app/app.py
     depends_on:
