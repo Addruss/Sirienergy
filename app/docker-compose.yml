@@ -46,6 +46,16 @@ services:
       - userdb_data:/var/lib/postgresql/data
     container_name: user_db
 
+  weather:
+    build:
+      context: ./weather
+    env_file:
+      - ./weather/.env
+      - ./common/env_files/.env.cookies
+    volumes:
+      - ./weather/app.py:/app/app.py
+    container_name: weather
+
   
 
 volumes:
