@@ -56,6 +56,24 @@ services:
       - ./weather/app.py:/app/app.py
     container_name: weather
 
+  redis:
+    image: redislabs/rejson:latest
+    ports:
+      - "6379:6379"
+    container_name: redisjson
+
+  register:
+    build:
+      context: ./register
+    env_file:
+      - ./register/.env
+      - ./common/env_files/.env.cookies
+    volumes:
+      - ./register/app.py:/app/app.py
+    depends_on:
+      - redis
+    container_name: register
+
   
 
 volumes:
