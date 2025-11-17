@@ -74,6 +74,17 @@ services:
       - redis
     container_name: register
 
+  entsoe:
+    build:
+      context: ./entsoe
+    env_file:
+      - ./entsoe/.env
+      - ./common/env_files/.env.cookies
+    volumes:
+      - ./entsoe/app.py:/app/app.py
+      - ./entsoe/tables/entsoe_country_keys.csv:/app/tables/entsoe_country_keys.csv
+    container_name: entsoe
+
   
 
 volumes:

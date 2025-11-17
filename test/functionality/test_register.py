@@ -8,7 +8,7 @@ BASE_URL = "https://sirienergy.uab.cat"
 data = {
     "email": "example@uab.cat",
     "password": "123456",
-    "country": "ES",
+    "country": "Spain",
     "latitude": 41.4,
     "longitude": 2.1,
     "altitude": 10,
