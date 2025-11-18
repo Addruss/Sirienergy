@@ -85,7 +85,14 @@ services:
       - ./entsoe/tables/entsoe_country_keys.csv:/app/tables/entsoe_country_keys.csv
     container_name: entsoe
 
-  
+  processing:
+    build:
+      context: ./processing
+    env_file:
+      - ./common/env_files/.env.cookies
+    volumes:
+      - ./processing/app.py:/app/app.py
+    container_name: processing
 
 volumes:
   userdb_data:
