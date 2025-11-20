@@ -56,11 +56,20 @@ services:
       - ./weather/app.py:/app/app.py
     container_name: weather
 
+  weather_redis:
+    image: redis:7-alpine
+    container_name: weather_redis
+    volumes:
+      - weather_redis_data:/data
+    restart: unless-stopped
+
   redis:
     image: redislabs/rejson:latest
     ports:
       - "6379:6379"
     container_name: redisjson
+    volumes:
+      - redis_data:/data
 
   register:
     build:
@@ -85,6 +94,13 @@ services:
       - ./entsoe/tables/entsoe_country_keys.csv:/app/tables/entsoe_country_keys.csv
     container_name: entsoe
 
+  entsoe_redis:
+    image: redis:7-alpine
+    container_name: entsoe_redis
+    volumes:
+      - entsoe_redis_data:/data
+    restart: unless-stopped
+
   processing:
     build:
       context: ./processing
@@ -96,3 +112,6 @@ services:
 
 volumes:
   userdb_data:
+  redis_data:
+  entsoe_redis_data:
+  weather_redis_data:

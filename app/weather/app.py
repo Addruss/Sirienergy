@@ -1,3 +1,4 @@
+import json
 import os
 import logging
 
@@ -14,6 +15,8 @@ from retry_requests import retry
 
 from itsdangerous import URLSafeSerializer
 
+import redis
+
 app = Flask(__name__)
 
 logging.basicConfig(level=logging.DEBUG)
@@ -23,6 +26,18 @@ SECRET_KEY = os.getenv("SECRET_KEY", "default_secret_key")
 
 serializer = URLSafeSerializer(SECRET_KEY, salt="user-cookie")
 
+REDIS_HOST = os.getenv("WEATHER_REDIS_HOST", os.getenv("REDIS_HOST", "weather_redis"))
+REDIS_PORT = int(os.getenv("WEATHER_REDIS_PORT", os.getenv("REDIS_PORT", 6379)))
+REDIS_DB = int(os.getenv("WEATHER_REDIS_DB", 0))
+CACHE_TTL_SECONDS = int(os.getenv("WEATHER_CACHE_TTL_SECONDS", 3600))
+
+try:
+    redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB, decode_responses=True)
+    redis_client.ping()
+    logging.info("Connected to weather Redis %s:%d db=%d", REDIS_HOST, REDIS_PORT, REDIS_DB)
+except Exception as e:
+    logging.warning("Weather Redis unavailable (%s:%d db=%s): %s", REDIS_HOST, REDIS_PORT, REDIS_DB, e)
+    redis_client = None
 
 def get_weather(
     latitude: float,
@@ -31,15 +46,29 @@ def get_weather(
 ) -> pd.DataFrame:
     """Retrieves hourly weather data for a location using Open-Meteo API.
 
-    Args:
-        latitude: Latitude of the location in degrees.
-        longitude: Longitude of the location in degrees.
-        timezone: Timezone of the location (e.g., 'Europe/Berlin').
-
-    Returns:
-        DataFrame containing hourly weather codes for the next 24 hours.
+    Uses a Redis cache (one hour by default) keyed by lat/lon/timezone/date to
+    avoid repeated external API calls.
     """
-    cache_session = requests_cache.CachedSession(".cache", expire_after=3600)
+    # use date in key so forecasts for different days are cached separately
+    today = datetime.utcnow().date().isoformat()
+    cache_key = f"weather:{latitude}:{longitude}:{timezone}:{today}"
+
+    # try cache
+    if redis_client:
+        try:
+            cached = redis_client.get(cache_key)
+            if cached:
+                logging.debug("Weather cache hit for %s", cache_key)
+                cached_list = json.loads(cached)
+                df = pd.DataFrame(cached_list)
+                df["date"] = pd.to_datetime(df["date"])
+                df["weather_code"] = df["weather_code"].astype(str)
+                return df.head(24)
+        except Exception as e:
+            logging.warning("Weather Redis GET failed: %s", e)
+
+    # existing behaviour: fetch from Open-Meteo
+    cache_session = requests_cache.CachedSession(".cache", expire_after=CACHE_TTL_SECONDS)
     retry_session = retry(cache_session, retries=5, backoff_factor=0.2)
     openmeteo = openmeteo_requests.Client(session=retry_session)
 
@@ -70,23 +99,38 @@ def get_weather(
 
     dataframe = pd.DataFrame(hourly_data).head(24)
     dataframe["weather_code"] = dataframe["weather_code"].astype(int).astype(str)
-    return dataframe
 
+    # save to redis cache
+    if redis_client:
+        try:
+            serializable = dataframe.copy()
+            serializable["date"] = serializable["date"].dt.strftime("%Y-%m-%dT%H:%M:%S%z")
+            redis_client.set(cache_key, json.dumps(serializable.to_dict(orient="records")), ex=CACHE_TTL_SECONDS)
+            logging.debug("Cached weather under %s (ttl %ds)", cache_key, CACHE_TTL_SECONDS)
+        except Exception as e:
+            logging.warning("Weather Redis SET failed: %s", e)
+
+    return dataframe
 
 def get_sunrise_sunset(latitude: float, longitude: float) -> Tuple[str, str]:
     """Retrieves sunrise and sunset times for a location using WeatherAPI.
 
-    Args:
-        latitude: Latitude of the location in degrees.
-        longitude: Longitude of the location in degrees.
-
-    Returns:
-        Tuple containing sunrise and sunset times as strings ('06:30 AM' 
-        format).
-
-    Raises:
-        requests.HTTPError: If API request fails.
+    Uses Redis cache (same TTL as weather) keyed by lat/lon/date to avoid extra API calls.
     """
+    today = datetime.utcnow().date().isoformat()
+    cache_key = f"sun:{latitude}:{longitude}:{today}"
+
+    # Try cache
+    if redis_client:
+        try:
+            cached = redis_client.get(cache_key)
+            if cached:
+                logging.debug("Sunrise/sunset cache hit for %s", cache_key)
+                obj = json.loads(cached)
+                return obj.get("sunrise"), obj.get("sunset")
+        except Exception as e:
+            logging.warning("Weather Redis GET failed for sunrise/sunset: %s", e)
+
     url = "http://api.weatherapi.com/v1/astronomy.json"
     params = {
         "key": WEATHER_API_API_KEY,
@@ -99,7 +143,18 @@ def get_sunrise_sunset(latitude: float, longitude: float) -> Tuple[str, str]:
 
     data = response.json()
     astronomy = data["astronomy"]["astro"]
-    return astronomy["sunrise"], astronomy["sunset"]
+    sunrise = astronomy["sunrise"]
+    sunset = astronomy["sunset"]
+
+    # Save to cache
+    if redis_client:
+        try:
+            redis_client.set(cache_key, json.dumps({"sunrise": sunrise, "sunset": sunset}), ex=CACHE_TTL_SECONDS)
+            logging.debug("Cached sunrise/sunset under %s (ttl %ds)", cache_key, CACHE_TTL_SECONDS)
+        except Exception as e:
+            logging.warning("Weather Redis SET failed for sunrise/sunset: %s", e)
+
+    return sunrise, sunset
 
 def image_array(
     codes: pd.DataFrame,

@@ -11,6 +11,8 @@ import xmltodict
 import csv
 import json
 
+import redis
+
 app = Flask(__name__)
 
 logging.basicConfig(level=logging.DEBUG)
@@ -18,8 +20,21 @@ logging.basicConfig(level=logging.DEBUG)
 ENTSO_E_API_KEY = os.getenv('ENTSO_E_API_KEY')
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "default_secret_key")
 
+REDIS_HOST = os.getenv("REDIS_HOST", "entsoe_redis")
+REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
+REDIS_DB = int(os.getenv("REDIS_DB", 0))
+CACHE_TTL_SECONDS = int(os.getenv("CACHE_TTL_SECONDS", 3600))  # 1 hour
+
 # Initialize serializer (same as user_ms)
 serializer = URLSafeSerializer(app.config["SECRET_KEY"], salt="user-cookie")
+
+try:
+    redis_client = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB, decode_responses=True)
+    redis_client.ping()
+    logging.info("Connected to Redis cache at %s:%d", REDIS_HOST, REDIS_PORT)
+except Exception as e:
+    logging.warning("Redis cache unavailable (%s:%d): %s", REDIS_HOST, REDIS_PORT, e)
+    redis_client = None
 
 def load_entsoe_country_keys() -> Dict[str, str]:
     """Loads country keys from a CSV file for ENTSO-E API queries.
@@ -46,19 +61,27 @@ def get_day_ahead_prices(
 ) -> Optional[List[Dict[str, Union[str, float]]]]:
     """Retrieves day-ahead electricity prices for a specified country.
 
-    Args:
-        country_name: The name of the country for which to retrieve prices.
-
-    Returns:
-        A list of price points for the day-ahead market, or None if the request
-        fails.
+    This function uses the dedicated Redis cache (TTL configurable) keyed by
+    country + period window to reduce ENTSO-E API calls.
     """
-
     endpoint = "https://web-api.tp.entsoe.eu/api"
     current_datetime = datetime.now()
     yesterday_datetime = current_datetime - timedelta(days=1)
     current_formatted = current_datetime.strftime("%Y%m%d") + "2200"
     yesterday_formatted = yesterday_datetime.strftime("%Y%m%d") + "2200"
+
+    # cache key includes country + period window
+    cache_key = f"entsoe:{country_name}:{yesterday_formatted}:{current_formatted}"
+
+    # Try cache
+    if redis_client:
+        try:
+            cached = redis_client.get(cache_key)
+            if cached:
+                logging.debug("ENTSO-E cache hit for key %s", cache_key)
+                return json.loads(cached)
+        except Exception as e:
+            logging.warning("Redis GET failed: %s", e)
 
     entsoe_country_keys = load_entsoe_country_keys()
     if country_name not in entsoe_country_keys:
@@ -81,28 +104,30 @@ def get_day_ahead_prices(
     data_json = json.loads(json.dumps(data_dict))
 
     if response.status_code == 200:
-
-        time_series_list = data_json["Publication_MarketDocument"].get(
-            "TimeSeries", [])
+        time_series_list = data_json["Publication_MarketDocument"].get("TimeSeries", [])
         points = []
 
         if isinstance(time_series_list, list):
             for time_series in time_series_list:
-                if time_series["Period"]["resolution"] == "PT15M":
-                    points = time_series["Period"]["Point"]
+                if time_series.get("Period", {}).get("resolution") == "PT15M":
+                    points = time_series["Period"].get("Point", [])
                     break
-        elif time_series_list["Period"]["resolution"] == "PT15M":
-            points = time_series_list["Period"]["Point"]
+        elif time_series_list.get("Period", {}).get("resolution") == "PT15M":
+            points = time_series_list["Period"].get("Point", [])
         else:
             logging.info("Incorrect format: %s", time_series_list)
 
+        # cache result
+        if redis_client:
+            try:
+                redis_client.set(cache_key, json.dumps(points), ex=CACHE_TTL_SECONDS)
+                logging.debug("Cached ENTSO-E response under key %s (ttl %ds)", cache_key, CACHE_TTL_SECONDS)
+            except Exception as e:
+                logging.warning("Redis SET failed: %s", e)
+
         return points
     else:
-        logging.error(
-            "Failed to retrieve data. Status code: %s, Response: %s",
-            response.status_code,
-            data_json,
-        )
+        logging.error("Failed to retrieve data. Status code: %s, Response: %s", response.status_code, data_json)
         return None
 
 
