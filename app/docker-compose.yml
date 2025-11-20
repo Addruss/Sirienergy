@@ -110,6 +110,15 @@ services:
       - ./processing/app.py:/app/app.py
     container_name: processing
 
+  notifications:
+    build:
+      context: ./notifications
+    env_file:
+      - ./common/env_files/.env.cookies
+    volumes:
+      - ./notifications/app.py:/app/app.py
+    container_name: notifications
+
 volumes:
   userdb_data:
   redis_data:
