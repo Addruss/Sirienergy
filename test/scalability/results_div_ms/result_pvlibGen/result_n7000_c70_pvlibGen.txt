@@ -1,0 +1,42 @@
+This is ApacheBench, Version 2.3 <$Revision: 1903618 $>
+Copyright 1996 Adam Twiss, Zeus Technology Ltd, http://www.zeustech.net/
+Licensed to The Apache Software Foundation, http://www.apache.org/
+
+Benchmarking localhost (be patient)
+
+
+Server Software:        Werkzeug/3.1.4
+Server Hostname:        localhost
+Server Port:            5005
+
+Document Path:          /processing/pvlibGen
+Document Length:        1760 bytes
+
+Concurrency Level:      70
+Time taken for tests:   55.159 seconds
+Complete requests:      7000
+Failed requests:        0
+Total transferred:      13489000 bytes
+HTML transferred:       12320000 bytes
+Requests per second:    126.91 [#/sec] (mean)
+Time per request:       551.592 [ms] (mean)
+Time per request:       7.880 [ms] (mean, across all concurrent requests)
+Transfer rate:          238.81 [Kbytes/sec] received
+
+Connection Times (ms)
+              min  mean[+/-sd] median   max
+Connect:        0    0   0.1      0       2
+Processing:    25  551 104.3    531    1151
+Waiting:        9  536 104.3    517    1138
+Total:         25  551 104.3    531    1152
+
+Percentage of the requests served within a certain time (ms)
+  50%    531
+  66%    573
+  75%    604
+  80%    626
+  90%    686
+  95%    747
+  98%    825
+  99%    886
+ 100%   1152 (longest request)

@@ -1,0 +1,42 @@
+This is ApacheBench, Version 2.3 <$Revision: 1903618 $>
+Copyright 1996 Adam Twiss, Zeus Technology Ltd, http://www.zeustech.net/
+Licensed to The Apache Software Foundation, http://www.apache.org/
+
+Benchmarking localhost (be patient)
+
+
+Server Software:        Werkzeug/3.1.4
+Server Hostname:        localhost
+Server Port:            5002
+
+Document Path:          /weather
+Document Length:        371 bytes
+
+Concurrency Level:      90
+Time taken for tests:   41.039 seconds
+Complete requests:      9000
+Failed requests:        0
+Total transferred:      4833000 bytes
+HTML transferred:       3339000 bytes
+Requests per second:    219.31 [#/sec] (mean)
+Time per request:       410.385 [ms] (mean)
+Time per request:       4.560 [ms] (mean, across all concurrent requests)
+Transfer rate:          115.01 [Kbytes/sec] received
+
+Connection Times (ms)
+              min  mean[+/-sd] median   max
+Connect:        0    0   0.2      0       3
+Processing:    52  410  22.3    406     623
+Waiting:        6  397  22.2    393     610
+Total:         52  410  22.3    406     624
+
+Percentage of the requests served within a certain time (ms)
+  50%    406
+  66%    411
+  75%    415
+  80%    420
+  90%    434
+  95%    439
+  98%    446
+  99%    453
+ 100%    624 (longest request)

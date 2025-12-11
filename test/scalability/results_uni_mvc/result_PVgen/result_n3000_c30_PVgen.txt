@@ -1,0 +1,48 @@
+This is ApacheBench, Version 2.3 <$Revision: 1903618 $>
+Copyright 1996 Adam Twiss, Zeus Technology Ltd, http://www.zeustech.net/
+Licensed to The Apache Software Foundation, http://www.apache.org/
+
+Benchmarking sirienergy.uab.cat (be patient)
+
+
+Server Software:        openresty/1.27.1.2
+Server Hostname:        sirienergy.uab.cat
+Server Port:            443
+SSL/TLS Protocol:       TLSv1.3,TLS_AES_256_GCM_SHA384,2048,256
+Server Temp Key:        ECDH P-384 384 bits
+TLS Server Name:        sirienergy.uab.cat
+
+Document Path:          /PVgen
+Document Length:        411 bytes
+
+Concurrency Level:      30
+Time taken for tests:   15.397 seconds
+Complete requests:      3000
+Failed requests:        0
+Total transferred:      1701000 bytes
+Total body sent:        858000
+HTML transferred:       1233000 bytes
+Requests per second:    194.84 [#/sec] (mean)
+Time per request:       153.973 [ms] (mean)
+Time per request:       5.132 [ms] (mean, across all concurrent requests)
+Transfer rate:          107.88 [Kbytes/sec] received
+                        54.42 kb/s sent
+                        162.30 kb/s total
+
+Connection Times (ms)
+              min  mean[+/-sd] median   max
+Connect:        3    5   3.8      4      59
+Processing:     7  149  59.7    140     451
+Waiting:        6  149  59.7    140     451
+Total:         11  153  59.9    145     456
+
+Percentage of the requests served within a certain time (ms)
+  50%    145
+  66%    170
+  75%    189
+  80%    201
+  90%    233
+  95%    264
+  98%    299
+  99%    327
+ 100%    456 (longest request)

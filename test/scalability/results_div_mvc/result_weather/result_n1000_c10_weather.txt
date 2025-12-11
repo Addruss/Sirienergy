@@ -1,0 +1,48 @@
+This is ApacheBench, Version 2.3 <$Revision: 1903618 $>
+Copyright 1996 Adam Twiss, Zeus Technology Ltd, http://www.zeustech.net/
+Licensed to The Apache Software Foundation, http://www.apache.org/
+
+Benchmarking sirienergy.uab.cat (be patient)
+
+
+Server Software:        openresty/1.27.1.2
+Server Hostname:        sirienergy.uab.cat
+Server Port:            443
+SSL/TLS Protocol:       TLSv1.3,TLS_AES_256_GCM_SHA384,2048,256
+Server Temp Key:        ECDH P-384 384 bits
+TLS Server Name:        sirienergy.uab.cat
+
+Document Path:          /weather
+Document Length:        7512 bytes
+
+Concurrency Level:      10
+Time taken for tests:   13.033 seconds
+Complete requests:      1000
+Failed requests:        0
+Total transferred:      7677000 bytes
+Total body sent:        224000
+HTML transferred:       7512000 bytes
+Requests per second:    76.73 [#/sec] (mean)
+Time per request:       130.328 [ms] (mean)
+Time per request:       13.033 [ms] (mean, across all concurrent requests)
+Transfer rate:          575.25 [Kbytes/sec] received
+                        16.78 kb/s sent
+                        592.03 kb/s total
+
+Connection Times (ms)
+              min  mean[+/-sd] median   max
+Connect:        3    4   1.5      4      22
+Processing:    58  122 212.4     66    4372
+Waiting:       57  122 212.4     66    4372
+Total:         61  126 212.6     70    4376
+
+Percentage of the requests served within a certain time (ms)
+  50%     70
+  66%     89
+  75%    194
+  80%    206
+  90%    221
+  95%    233
+  98%    244
+  99%    267
+ 100%   4376 (longest request)
